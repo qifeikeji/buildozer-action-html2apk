@@ -1,4 +1,4 @@
-name: Build APK and Deploy HTML
+name: Build APK
 
 on:
   push:
@@ -7,125 +7,75 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # 检出代码
+      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 设置 Python
+      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
-      # 设置 Java
+      # Set up Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 安装 Android SDK
+      # Install Android SDK
       - name: Install Android SDK
         run: |
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O commandlinetools.zip
-          unzip commandlinetools.zip -d /tmp/android-sdk
+          mkdir -p $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d $HOME/android-sdk
           mkdir -p $HOME/android-sdk/cmdline-tools/latest
-          mv /tmp/android-sdk/cmdline-tools/* $HOME/android-sdk/cmdline-tools/latest/
-          export ANDROID_HOME=$HOME/android-sdk
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_ENV
+          mv $HOME/android-sdk/cmdline-tools/* $HOME/android-sdk/cmdline-tools/latest/
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
-      # 接受 Android SDK 许可证
-      - name: Accept Android SDK licenses
+      # Accept Android SDK Licenses
+      - name: Accept Android SDK Licenses
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           sleep 5
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;36.0.0" --licenses || true
-          ls -l $ANDROID_HOME/licenses || echo "No licenses found"
-          cat $ANDROID_HOME/licenses/* || echo "No license files to display"
 
-      # 安装 Android SDK Build-Tools 和 Platform
+      # Install Android SDK Components
       - name: Install Android SDK Build-Tools and Platform
         run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;36.0.0" "platforms;android-33" "ndk;25.2.9519653"
-          ls -l $ANDROID_HOME/build-tools/ || echo "Build-Tools directory missing"
-          ls -l $ANDROID_HOME/build-tools/36.0.0/ || echo "Build-Tools 36.0.0 missing"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;36.0.0" "platforms;android-33" "ndk;25.2.9519653"
+          # Verify installation
+          ls -l $ANDROID_HOME/build-tools/36.0.0/ || echo "Build-Tools 36.0.0 not installed"
           $ANDROID_HOME/build-tools/36.0.0/aidl --version || echo "AIDL not found"
 
-      # 清理其他 Build-Tools 版本
-      - name: Clean other Build-Tools versions
-        run: |
-          find $ANDROID_HOME/build-tools/ -maxdepth 1 -type d -not -name "36.0.0" -not -name "build-tools" -exec rm -rf {} +
-          ls -l $ANDROID_HOME/build-tools/
-
-      # 调试 SDK 和 Build-Tools
-      - name: Debug SDK and Build-Tools
-        run: |
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
-          echo "ANDROID_NDK_HOME: $ANDROID_NDK_HOME"
-          ls -l $ANDROID_HOME
-          ls -l $ANDROID_HOME/build-tools || echo "Build-Tools directory missing"
-          ls -l $ANDROID_HOME/build-tools/36.0.0 || echo "Build-Tools 36.0.0 missing"
-          $ANDROID_HOME/build-tools/36.0.0/aidl --version || echo "AIDL not found"
-          ls -l $ANDROID_HOME/licenses || echo "Licenses directory missing"
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list --include_obsolete
-          cat .buildozer/android/platform/buildozer.spec || echo "Buildozer spec file missing"
-
-      # 安装 Buildozer 系统依赖
-      - name: Install system dependencies
+      # Install Buildozer and Dependencies
+      - name: Install Buildozer and Dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential git python3 python3-dev ffmpeg \
-            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-            zlib1g-dev
+          sudo apt install -y build-essential git python3-dev zlib1g-dev
+          pip install --user buildozer==1.5.0 cython==0.29.36
 
-      # 安装 Python 依赖
-      - name: Install Python dependencies
-        run: |
-          pip install --user buildozer==1.5.0 kivy cython==0.29.36
-
-      # 清理 Buildozer 缓存
-      - name: Clean Buildozer cache
-        run: |
-          rm -rf /home/runner/.buildozer
-          buildozer android clean || true
-        working-directory: .
-
-      # 构建 APK
+      # Build APK
       - name: Build APK
         run: |
           rm -rf /home/runner/.buildozer
           buildozer android clean || true
           buildozer -v android debug
-        working-directory: .
         env:
-          ANDROID_SDK_ROOT: $HOME/android-sdk
           ANDROID_HOME: $HOME/android-sdk
+          ANDROID_SDK_ROOT: $HOME/android-sdk
           ANDROID_NDK_HOME: $HOME/android-sdk/ndk/25.2.9519653
 
-      # 上传 APK 工件
-      - name: Upload APK artifact
+      # Upload APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: localhostapp-apk
+          name: app-apk
           path: bin/*.apk
-          retention-days: 30
-
-      # 部署 HTML 到 gh-pages
-      - name: Deploy HTML to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
-          publish_branch: gh-pages
-          keep_files: false
-          include_files: index.html
