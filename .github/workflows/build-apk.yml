@@ -42,15 +42,18 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
           echo "PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
-      # 接受 Android SDK 许可证
+      # 接受 Android SDK 许可证 (Attempt 2 - More Explicit)
       - name: Accept Android SDK licenses
         run: |
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses "build-tools;36.0.0" || true
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses "platforms;android-33" || true
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses "ndk;25.2.9519653" || true
 
-      # 安装 Android SDK Build-Tools and Platform
+      # 安装 Android SDK Build-Tools and Platform (Retrying)
       - name: Install Android SDK Build-Tools and Platform
         run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;36.0.0" "platforms;android-33" "ndk;25.2.9519653"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --install "build-tools;36.0.0" "platforms;android-33" "ndk;25.2.9519653"
           ls -l $ANDROID_HOME/build-tools/ || echo "Build-Tools directory missing"
           ls -l $ANDROID_HOME/build-tools/36.0.0/ || echo "Build-Tools 36.0.0 missing"
           $ANDROID_HOME/build-tools/36.0.0/aidl --version || echo "AIDL not found"
@@ -58,8 +61,12 @@ jobs:
       # 清理其他 Build-Tools 版本
       - name: Clean other Build-Tools versions
         run: |
-          find $ANDROID_HOME/build-tools/ -maxdepth 1 -type d -not -name "36.0.0" -not -name "build-tools" -exec rm -rf {} +
-          ls -l $ANDROID_HOME/build-tools/
+          if [ -d "$ANDROID_HOME/build-tools/" ]; then
+            find $ANDROID_HOME/build-tools/ -maxdepth 1 -type d -not -name "36.0.0" -not -name "build-tools" -exec rm -rf {} +
+            ls -l $ANDROID_HOME/build-tools/
+          else
+            echo "Warning: $ANDROID_HOME/build-tools/ directory not found, skipping cleanup."
+          fi
 
       # 调试 SDK 和 Build-Tools
       - name: Debug SDK and Build-Tools
@@ -115,7 +122,7 @@ jobs:
           path: bin/*.apk
           retention-days: 30
 
-      # 部署 HTML 到 gh-pages
+      # 部署 HTML 到 GitHub Pages
       - name: Deploy HTML to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
