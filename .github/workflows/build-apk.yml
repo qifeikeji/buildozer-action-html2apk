@@ -1,0 +1,59 @@
+name: Build APK and Deploy HTML
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8' # Buildozer works well with Python 3.8
+
+      # Install system dependencies for Buildozer
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git python3 python3-dev ffmpeg \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            zlib1g-dev openjdk-17-jdk
+
+      # Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          pip install --user buildozer kivy cython
+
+      # Build APK with Buildozer
+      - name: Build APK
+        run: |
+          buildozer android debug
+        working-directory: .
+
+      # Upload APK as artifact
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: localhostapp-apk
+          path: bin/*.apk
+          retention-days: 30
+
+      # Deploy HTML to gh-pages branch
+      - name: Deploy HTML to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: false
+          include_files: index.html
