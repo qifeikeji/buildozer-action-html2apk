@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WeChat Article Editor</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        :root {
+            --spacing-large: 10px;
+            --spacing-medium: 5px;
+            --spacing-small: 2px;
+            --heading-30px-padding: var(--spacing-large);
+            --heading-20px-padding: var(--spacing-medium);
+            --heading-15px-padding: var(--spacing-small);
+            --text-area-font-size: 16px;
+            --text-area-alignment: left;
+            --heading-30px-font: SimSun, Arial, sans-serif;
+            --bg-pale-yellow: #ffeaab;
+            --bg-pale-pink: #ffe6e6;
+            --bg-pale-blue: #e6f3ff;
+            --bg-pale-green: #e6ffe6;
+            --bg-pale-gray: #f0f0f0;
+            --text-yellow: #ffeb3b;
+            --text-black: #000000;
+            --text-white: #ffffff;
+            --text-blue: #2196f3;
+            --text-red: #f44336;
+        }
+        body {
+            font-family: SimSun, Arial, sans-serif;
+            max-width: 375px;
+            margin: var(--spacing-large) auto;
+            padding: 0 var(--spacing-medium);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        .top-controls {
+            display: flex;
+            gap: var(--spacing-small);
+            margin-bottom: var(--spacing-medium);
+        }
+        .control-label {
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: var(--spacing-medium);
+            color: #333;
+        }
+        .preview-button, .share-button, .text-size-button, .text-align-button, .font-button, .add-container-button {
+            padding: var(--spacing-small) var(--spacing-medium);
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: var(--spacing-small);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .preview-button:hover, .share-button:hover, .text-size-button:hover, .text-align-button:hover, .font-button:hover, .add-container-button:hover {
+            background-color: #2980b9;
+        }
+        .container-bg-controls, .heading-color-controls, .text-controls, .font-controls {
+            display: flex;
+            gap: var(--spacing-small);
+            margin-bottom: var(--spacing-medium);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .bg-color-button, .text-color-button {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: var(--spacing-small);
+            cursor: pointer;
+        }
+        .border-toggle-button, .blur-toggle-button {
+            padding: var(--spacing-small) var(--spacing-medium);
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: var(--spacing-small);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .border-toggle-button:hover, .blur-toggle-button:hover {
+            background-color: #555;
+        }
+        .content-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container-unit {
+            width: 100%;
+            border: 1px solid #ccc;
+            padding: var(--spacing-medium);
+            margin-bottom: var(--spacing-large);
+            position: relative;
+            background-color: var(--bg-pale-yellow);
+            border-radius: 10px;
+        }
+        .module-container {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        .module-unit {
+            margin-bottom: var(--spacing-small);
+        }
+        .text-area-container, .heading-container, .image-area, .line-container, .spacer-container {
+            width: 100%;
+            position: relative;
+        }
+        .text-area {
+            width: 100%;
+            min-height: 100px;
+            padding: var(--spacing-medium);
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            resize: vertical;
+            text-align: var(--text-area-alignment);
+            white-space: pre-wrap;
+            font-family: SimSun, Arial, sans-serif;
+            font-size: var(--text-area-font-size);
+        }
+        .heading-30px, .heading-20px, .heading-15px {
+            width: 100%;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #ccc;
+            padding: var(--spacing-medium);
+            box-sizing: border-box;
+            font-family: SimSun, Arial, sans-serif;
+            position: relative;
+        }
+        .heading-30px {
+            font-size: 30px;
+            color: var(--text-red);
+            padding: var(--spacing-medium) 0;
+            font-family: var(--heading-30px-font);
+            background-size: cover;
+            background-position: center;
+        }
+        .heading-30px-blur {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background-size: cover;
+            background-position: center;
+            filter: blur(13px);
+            overflow: hidden;
+            z-index: -1;
+        }
+        .heading-20px {
+            font-size: 20px;
+        }
+        .heading-15px {
+            font-size: 15px;
+        }
+        .image-area {
+            border: 1px solid #ccc;
+            padding: var(--spacing-small);
+            box-sizing: border-box;
+            min-height: 50px;
+        }
+        .image-grid {
+            margin-bottom: var(--spacing-small);
+        }
+        .image-grid.single {
+            display: block;
+        }
+        .image-grid.two {
+            display: flex;
+            gap: var(--spacing-small);
+            padding: 5px;
+        }
+        .image-grid.multiple {
+            column-count: 2;
+            column-gap: var(--spacing-small);
+            column-width: calc((100% - var(--spacing-small)) / 2);
+        }
+        .image-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: var(--spacing-small);
+        }
+        .image-grid.two .image-container {
+            flex: 1;
+        }
+        .inserted-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 5px;
+        }
+        .delete-image-button {
+            position: absolute;
+            bottom: var(--spacing-small);
+            left: var(--spacing-small);
+            padding: var(--spacing-small) var(--spacing-medium);
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .delete-image-button:hover {
+            background-color: #c0392b;
+        }
+        .add-image-button {
+            position: absolute;
+            top: var(--spacing-small);
+            left: var(--spacing-small);
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-image-button:hover {
+            background-color: #45a049;
+        }
+        .add-buttons {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: var(--spacing-small);
+            justify-content: center;
+            width: 100%;
+            max-width: 375px;
+        }
+        .add-button {
+            padding: var(--spacing-small) var(--spacing-small);
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: var(--spacing-small);
+            font-size: 10px;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+            min-width: 40px;
+        }
+        .add-button:hover {
+            background-color: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+        .text-buttons, .image-area-buttons {
+            position: absolute;
+            bottom: var(--spacing-small);
+            right: var(--spacing-small);
+            display: flex;
+            gap: var(--spacing-small);
+        }
+        .container-controls {
+            display: flex;
+            gap: var(--spacing-small);
+            margin-bottom: var(--spacing-medium);
+        }
+        .text-button, .delete-module-button, .clear-button, .background-button, .delete-container-button, .change-bg-button {
+            padding: var(--spacing-small) var(--spacing-medium);
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .text-button:hover, .clear-button:hover, .background-button:hover, .change-bg-button:hover {
+            background-color: #555;
+        }
+        .delete-module-button, .delete-container-button {
+            background-color: #e74c3c;
+        }
+        .delete-module-button:hover, .delete-container-button:hover {
+            background-color: #c0392b;
+        }
+        .divider-line {
+            width: calc(100% - var(--spacing-medium) * 2);
+            height: 1px;
+            background-color: #ccc;
+            margin: 0 auto;
+        }
+        .spacer {
+            height: var(--spacing-large);
+            background-color: white;
+        }
+        .preview-mode .add-buttons, .preview-mode .text-buttons, .preview-mode .image-area-buttons, .preview-mode .add-image-button, .preview-mode .delete-image-button, .preview-mode .container-controls {
+            display: none;
+        }
+        .preview-mode .text-area, .preview-mode .heading-30px, .preview-mode .heading-20px, .preview-mode .heading-15px {
+            border: none;
+            pointer-events: none;
+        }
+        .preview-mode .text-area {
+            height: auto;
+            min-height: auto;
+            resize: none;
+            padding: var(--spacing-medium);
+            overflow: visible;
+            font-size: var(--text-area-font-size);
+            line-height: 1.6;
+            border-radius: var(--spacing-small);
+            text-indent: 2em;
+            text-align: var(--text-area-alignment);
+            background: none;
+        }
+        .preview-mode .image-area {
+            border: none;
+            padding: 0;
+        }
+        .preview-mode .container-unit {
+            border: none;
+            padding: 0;
+        }
+        .preview-mode .heading-30px {
+            padding: 30px;
+            background-color: var(--bg-pale-pink);
+            width: 100%;
+            position: relative;
+            font-family: var(--heading-30px-font);
+            background-size: cover;
+            background-position: center;
+            margin-bottom: -3px;
+            border-radius: 10px;
+        }
+        .preview-mode .heading-30px-blur {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background-size: cover;
+            background-position: center;
+            filter: blur(13px);
+            overflow: hidden;
+            z-index: -1;
+        }
+        .preview-mode .heading-20px {
+            padding: var(--heading-20px-padding) var(--spacing-medium);
+            background: none;
+            width: 150%;
+            position: relative;
+            left: -25%;
+        }
+        .preview-mode .heading-15px {
+            padding: var(--heading-15px-padding) var(--spacing-medium);
+            background: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-controls">
+        <button class="preview-button" onclick="togglePreviewMode()">预览模式</button>
+        <button class="share-button" onclick="shareAllContainers()">分享到微信</button>
+        <button class="add-container-button" onclick="addContainer()">添加容器</button>
+        <button class="add-container-button" onclick="addContainerWithoutBackground()">添加容器(无背景)</button>
+    </div>
+    <div class="control-label">文本背景色</div>
+    <div class="container-bg-controls">
+        <button class="bg-color-button" style="background-color: var(--bg-pale-yellow);" onclick="setContainerBackground('var(--bg-pale-yellow)')"></button>
+        <button class="bg-color-button" style="background-color: var(--bg-pale-pink);" onclick="setContainerBackground('var(--bg-pale-pink)')"></button>
+        <button class="bg-color-button" style="background-color: var(--bg-pale-blue);" onclick="setContainerBackground('var(--bg-pale-blue)')"></button>
+        <button class="bg-color-button" style="background-color: var(--bg-pale-green);" onclick="setContainerBackground('var(--bg-pale-green)')"></button>
+        <button class="bg-color-button" style="background-color: var(--bg-pale-gray);" onclick="setContainerBackground('var(--bg-pale-gray)')"></button>
+    </div>
+    <div class="control-label">标题色</div>
+    <div class="heading-color-controls">
+        <button class="text-color-button" style="background-color: var(--text-yellow);" onclick="setHeadingTextColor('var(--text-yellow)')"></button>
+        <button class="text-color-button" style="background-color: var(--text-black);" onclick="setHeadingTextColor('var(--text-black)')"></button>
+        <button class="text-color-button" style="background-color: var(--text-white);" onclick="setHeadingTextColor('var(--text-white)')"></button>
+        <button class="text-color-button" style="background-color: var(--text-blue);" onclick="setHeadingTextColor('var(--text-blue)')"></button>
+        <button class="text-color-button" style="background-color: var(--text-red);" onclick="setHeadingTextColor('var(--text-red)')"></button>
+        <button class="border-toggle-button" onclick="toggleHeadingBorder()">边框开</button>
+        <button class="blur-toggle-button" onclick="toggleHeadingBlur()">阴影开</button>
+    </div>
+    <div class="control-label">文本设置</div>
+    <div class="text-controls">
+        <button class="text-size-button" onclick="adjustTextSize(2)">A+</button>
+        <button class="text-size-button" onclick="adjustTextSize(-2)">A-</button>
+        <button class="text-align-button" onclick="setTextAlignment('left')">左对齐</button>
+        <button class="text-align-button" onclick="setTextAlignment('center')">中对齐</button>
+    </div>
+    <div class="control-label">标题字体</div>
+    <div class="font-controls">
+        <button class="font-button" onclick="setHeadingFont('Noto Serif SC, serif')">楷体</button>
+        <button class="font-button" onclick="setHeadingFont('Noto Sans SC, sans-serif')">圆体</button>
+        <button class="font-button" onclick="setHeadingFont('Noto Serif SC, serif')">仿宋</button>
+        <button class="font-button" onclick="setHeadingFont('Noto Sans SC, sans-serif')">黑体</button>
+        <button class="font-button" onclick="setHeadingFont('Noto Serif SC, serif')">宋体</button>
+    </div>
+    <div id="content" class="content-container">
+        <div class="container-unit" id="initial-heading-container">
+            <div class="container-controls">
+                <button class="delete-container-button" onclick="this.closest('.container-unit').remove()">删除容器</button>
+                <button class="change-bg-button" onclick="changeContainerBackground(this.closest('.container-unit'))">更改背景</button>
+            </div>
+            <div class="module-container module-unit">
+                <div class="heading-container">
+                    <div class="heading-30px" contenteditable="true">输入标题</div>
+                    <div class="text-buttons">
+                        <button class="background-button" onclick="document.getElementById('background-upload-initial').click()">选择背景图片</button>
+                        <input type="file" accept="image/*" class="hidden" id="background-upload-initial" onchange="setHeadingBackground(this, this.closest('.heading-container').querySelector('.heading-30px'))">
+                        <button class="text-button" onclick="selectHeadingText(this)">全选</button>
+                        <button class="text-button" onclick="pasteHeadingText(this)">粘贴</button>
+                        <button class="clear-button" onclick="clearHeadingText(this)">清空</button>
+                        <button class="delete-module-button" onclick="this.closest('.module-container').remove()">删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-unit" id="initial-content-container">
+            <div class="container-controls">
+                <button class="delete-container-button" onclick="this.closest('.container-unit').remove()">删除容器</button>
+                <button class="change-bg-button" onclick="changeContainerBackground(this.closest('.container-unit'))">更改背景</button>
+            </div>
+            <div class="module-container module-unit" id="initial-module">
+                <div class="add-buttons" id="initial-buttons">
+                    <button class="add-button" onclick="addTextArea('initial-buttons')">T</button>
+                    <button class="add-button" onclick="addImageArea('initial-buttons')">🖼️</button>
+                    <button class="add-button" onclick="addHeading('initial-buttons', '30px')">标30</button>
+                    <button class="add-button" onclick="addHeading('initial-buttons', '20px')">标20</button>
+                    <button class="add-button" onclick="addHeading('initial-buttons', '15px')">标15</button>
+                    <button class="add-button" onclick="addDividerLine('initial-buttons')">添加线</button>
+                    <button class="add-button" onclick="addSpacer('initial-buttons')">间隔</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isHeadingBorderOn = false;
+        let isHeadingBlurOn = false;
+
+        function togglePreviewMode() {
+            document.body.classList.toggle('preview-mode');
+            const previewButton = document.querySelector('.preview-button');
+            previewButton.textContent = document.body.classList.contains('preview-mode') ? '退出预览' : '预览模式';
+            const textAreas = document.querySelectorAll('.text-area');
+            textAreas.forEach(ta => {
+                if (document.body.classList.contains('preview-mode')) {
+                    ta.style.height = 'auto';
+                    ta.style.height = `${ta.scrollHeight}px`;
+                } else {
+                    ta.style.height = '';
+                }
+            });
+        }
+
+        function adjustTextSize(change) {
+            const root = document.documentElement;
+            const currentSize = parseFloat(getComputedStyle(root).getPropertyValue('--text-area-font-size')) || 16;
+            const newSize = Math.min(Math.max(currentSize + change, 12), 24);
+            root.style.setProperty('--text-area-font-size', `${newSize}px`);
+            const textAreas = document.querySelectorAll('.text-area');
+            textAreas.forEach(ta => {
+                if (document.body.classList.contains('preview-mode')) {
+                    ta.style.height = 'auto';
+                    ta.style.height = `${ta.scrollHeight}px`;
+                }
+            });
+        }
+
+        function setTextAlignment(alignment) {
+            document.documentElement.style.setProperty('--text-area-alignment', alignment);
+        }
+
+        function setHeadingFont(font) {
+            document.documentElement.style.setProperty('--heading-30px-font', font);
+        }
+
+        function setContainerBackground(color) {
+            const containers = document.querySelectorAll('.container-unit:not([data-no-background="true"])');
+            containers.forEach(container => {
+                container.style.backgroundColor = color;
+            });
+        }
+
+        function setHeadingTextColor(color) {
+            const headings = document.querySelectorAll('.heading-30px');
+            headings.forEach(heading => {
+                heading.style.color = color;
+                if (isHeadingBorderOn) {
+                    heading.style.border = `2px solid ${color}`;
+                }
+            });
+        }
+
+        function toggleHeadingBorder() {
+            isHeadingBorderOn = !isHeadingBorderOn;
+            const headings = document.querySelectorAll('.heading-30px');
+            const button = document.querySelector('.border-toggle-button');
+            headings.forEach(heading => {
+                const currentColor = getComputedStyle(heading).color;
+                heading.style.border = isHeadingBorderOn ? `2px solid ${currentColor}` : 'none';
+            });
+            button.textContent = isHeadingBorderOn ? '边框关' : '边框开';
+        }
+
+        function toggleHeadingBlur() {
+            isHeadingBlurOn = !isHeadingBlurOn;
+            const headings = document.querySelectorAll('.heading-30px');
+            const button = document.querySelector('.blur-toggle-button');
+            headings.forEach(heading => {
+                const blurDiv = heading.querySelector('.heading-30px-blur');
+                if (isHeadingBlurOn) {
+                    if (!blurDiv && heading.style.backgroundImage) {
+                        const blur = document.createElement('div');
+                        blur.className = 'heading-30px-blur';
+                        blur.style.backgroundImage = heading.style.backgroundImage;
+                        heading.prepend(blur);
+                    }
+                    heading.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                } else {
+                    if (blurDiv) blurDiv.remove();
+                    heading.style.backgroundColor = '';
+                }
+            });
+            button.textContent = isHeadingBlurOn ? '阴影关' : '阴影开';
+        }
+
+        function addContainer() {
+            const contentDiv = document.getElementById('content');
+            const container = document.createElement('div');
+            container.className = 'container-unit';
+            container.id = 'container-' + Date.now();
+            container.style.backgroundColor = 'var(--bg-pale-yellow)';
+
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'container-controls';
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-container-button';
+            deleteButton.textContent = '删除容器';
+            deleteButton.onclick = () => container.remove();
+            const bgButton = document.createElement('button');
+            bgButton.className = 'change-bg-button';
+            bgButton.textContent = '更改背景';
+            bgButton.onclick = () => changeContainerBackground(container);
+            controlsDiv.appendChild(deleteButton);
+            controlsDiv.appendChild(bgButton);
+
+            const moduleContainer = document.createElement('div');
+            moduleContainer.className = 'module-container module-unit';
+            const buttonId = 'buttons-' + Date.now();
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'add-buttons';
+            buttonContainer.id = buttonId;
+
+            const buttons = [
+                { text: 'T', onclick: () => addTextArea(buttonId) },
+                { text: '🖼️', onclick: () => addImageArea(buttonId) },
+                { text: '标30', onclick: () => addHeading(buttonId, '30px') },
+                { text: '标20', onclick: () => addHeading(buttonId, '20px') },
+                { text: '标15', onclick: () => addHeading(buttonId, '15px') },
+                { text: '添加线', onclick: () => addDividerLine(buttonId) },
+                { text: '间隔', onclick: () => addSpacer(buttonId) }
+            ];
+            
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.className = 'add-button';
+                button.textContent = btn.text;
+                button.onclick = btn.onclick;
+                buttonContainer.appendChild(button);
+            });
+
+            moduleContainer.appendChild(buttonContainer);
+            container.appendChild(controlsDiv);
+            container.appendChild(moduleContainer);
+            contentDiv.appendChild(container);
+        }
+
+        function addContainerWithoutBackground() {
+            const contentDiv = document.getElementById('content');
+            const container = document.createElement('div');
+            container.className = 'container-unit';
+            container.id = 'container-' + Date.now();
+            container.style.backgroundColor = 'transparent';
+            container.setAttribute('data-no-background', 'true');
+
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'container-controls';
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-container-button';
+            deleteButton.textContent = '删除容器';
+            deleteButton.onclick = () => container.remove();
+            const bgButton = document.createElement('button');
+            bgButton.className = 'change-bg-button';
+            bgButton.textContent = '更改背景';
+            bgButton.onclick = () => changeContainerBackground(container);
+            controlsDiv.appendChild(deleteButton);
+            controlsDiv.appendChild(bgButton);
+
+            const moduleContainer = document.createElement('div');
+            moduleContainer.className = 'module-container module-unit';
+            const buttonId = 'buttons-' + Date.now();
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'add-buttons';
+            buttonContainer.id = buttonId;
+
+            const buttons = [
+                { text: 'T', onclick: () => addTextArea(buttonId) },
+                { text: '🖼️', onclick: () => addImageArea(buttonId) },
+                { text: '标30', onclick: () => addHeading(buttonId, '30px') },
+                { text: '标20', onclick: () => addHeading(buttonId, '20px') },
+                { text: '标15', onclick: () => addHeading(buttonId, '15px') },
+                { text: '添加线', onclick: () => addDividerLine(buttonId) },
+                { text: '间隔', onclick: () => addSpacer(buttonId) }
+            ];
+            
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.className = 'add-button';
+                button.textContent = btn.text;
+                button.onclick = btn.onclick;
+                buttonContainer.appendChild(button);
+            });
+
+            moduleContainer.appendChild(buttonContainer);
+            container.appendChild(controlsDiv);
+            container.appendChild(moduleContainer);
+            contentDiv.appendChild(container);
+        }
+
+        function changeContainerBackground(container) {
+            const colors = ['var(--bg-pale-yellow)', 'var(--bg-pale-pink)', 'var(--bg-pale-blue)', 'var(--bg-pale-green)', 'var(--bg-pale-gray)', 'transparent'];
+            const currentColor = container.style.backgroundColor || 'var(--bg-pale-yellow)';
+            const currentIndex = colors.indexOf(currentColor);
+            const nextIndex = (currentIndex + 1) % colors.length;
+            container.style.backgroundColor = colors[nextIndex];
+            if (colors[nextIndex] === 'transparent') {
+                container.setAttribute('data-no-background', 'true');
+            } else {
+                container.removeAttribute('data-no-background');
+            }
+        }
+
+        async function toBase64(url) {
+            if (!url || url.startsWith('data:')) {
+                return url;
+            }
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                console.error('Failed to convert image to base64:', err);
+                return '';
+            }
+        }
+
+        async function shareAllContainers() {
+            const isPreviewMode = document.body.classList.contains('preview-mode');
+            if (!isPreviewMode) {
+                document.body.classList.add('preview-mode');
+            }
+            const contentDiv = document.getElementById('content');
+            const containers = contentDiv.querySelectorAll('.container-unit');
+            const clones = [];
+            
+            for (const container of containers) {
+                const clone = container.cloneNode(true);
+                clone.querySelectorAll('.container-controls, .add-buttons, .text-buttons, .image-area-buttons, .add-image-button, .delete-image-button').forEach(el => el.remove());
+                
+                // Set container background color
+                const bgColor = container.hasAttribute('data-no-background') && container.getAttribute('data-no-background') === 'true'
+                    ? 'transparent'
+                    : getComputedStyle(container).backgroundColor;
+                clone.style.backgroundColor = bgColor;
+                
+                // Convert textareas to divs
+                clone.querySelectorAll('.text-area').forEach(textarea => {
+                    const div = document.createElement('div');
+                    div.className = 'text-area';
+                    div.innerText = textarea.value;
+                    textarea.replaceWith(div);
+                });
+                
+                // Convert images to base64
+                const images = clone.querySelectorAll('.inserted-image');
+                for (const img of images) {
+                    if (img.src) {
+                        img.src = await toBase64(img.src);
+                    }
+                }
+                
+                // Handle heading backgrounds and blur
+                const headings = clone.querySelectorAll('.heading-30px');
+                for (const heading of headings) {
+                    const bgImage = heading.style.backgroundImage;
+                    let blurDiv = heading.querySelector('.heading-30px-blur');
+                    if (bgImage && bgImage.includes('url(')) {
+                        const url = bgImage.replace(/url\(['"]?(.+?)['"]?\)/, '$1');
+                        if (url) {
+                            const base64 = await toBase64(url);
+                            heading.style.backgroundImage = `url(${base64})`;
+                            if (isHeadingBlurOn) {
+                                if (!blurDiv) {
+                                    blurDiv = document.createElement('div');
+                                    blurDiv.className = 'heading-30px-blur';
+                                    heading.prepend(blurDiv);
+                                }
+                                blurDiv.style.backgroundImage = `url(${base64})`;
+                            }
+                        }
+                    }
+                    // Apply current text color, border, and blur styles
+                    const currentColor = getComputedStyle(document.querySelector('.heading-30px')).color;
+                    heading.style.color = currentColor;
+                    heading.style.border = isHeadingBorderOn ? `2px solid ${currentColor}` : 'none';
+                    heading.style.backgroundColor = isHeadingBlurOn ? 'rgba(255, 255, 255, 0.3)' : '';
+                }
+                
+                clones.push(clone.outerHTML);
+            }
+            
+            if (!isPreviewMode) {
+                document.body.classList.remove('preview-mode');
+            }
+
+            const styles = `
+                <style>
+                    * {
+                        box-sizing: border-box;
+                    }
+                    html, body {
+                        overflow-x: hidden;
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                    }
+                    body {
+                        font-family: SimSun, Arial, sans-serif;
+                        max-width: 375px;
+                        margin: 10px auto;
+                        padding: 0 5px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    .content-container {
+                        width: 100%;
+                        max-width: 375px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    .container-unit {
+                        width: 100%;
+                        border: none;
+                        padding: 0;
+                        margin-bottom: 10px;
+                        position: relative;
+                        border-radius: 10px;
+                    }
+                    .container-unit[data-no-background="true"] {
+                        background-color: transparent;
+                    }
+                    .module-container {
+                        width: 100%;
+                    }
+                    .module-unit {
+                        margin-bottom: 2px;
+                    }
+                    .text-area-container, .heading-container, .image-area, .line-container, .spacer-container {
+                        width: 100%;
+                        position: relative;
+                    }
+                    .text-area {
+                        width: 100%;
+                        height: auto;
+                        min-height: auto;
+                        resize: none;
+                        padding: 5px;
+                        overflow: visible;
+                        font-size: ${getComputedStyle(document.documentElement).getPropertyValue('--text-area-font-size')};
+                        line-height: 1.6;
+                        border-radius: 2px;
+                        text-indent: 2em;
+                        text-align: ${getComputedStyle(document.documentElement).getPropertyValue('--text-area-alignment')};
+                        border: none;
+                        pointer-events: none;
+                        font-family: SimSun, Arial, sans-serif;
+                        white-space: pre-wrap;
+                        background: none;
+                    }
+                    .heading-30px, .heading-20px, .heading-15px {
+                        width: 100%;
+                        font-weight: bold;
+                        text-align: center;
+                        border: none;
+                        box-sizing: border-box;
+                        font-family: SimSun, Arial, sans-serif;
+                        pointer-events: none;
+                        position: relative;
+                    }
+                    .heading-30px {
+                        font-size: 30px;
+                        color: ${getComputedStyle(document.querySelector('.heading-30px')).color};
+                        padding: 30px;
+                        background-color: ${isHeadingBlurOn ? 'rgba(255, 255, 255, 0.3)' : 'var(--bg-pale-pink)'};
+                        width: 100%;
+                        position: relative;
+                        font-family: ${getComputedStyle(document.documentElement).getPropertyValue('--heading-30px-font')};
+                        background-size: cover;
+                        background-position: center;
+                        margin-bottom: -3px;
+                        border-radius: 10px;
+                        border: ${isHeadingBorderOn ? `2px solid ${getComputedStyle(document.querySelector('.heading-30px')).color}` : 'none'};
+                    }
+                    .heading-30px-blur {
+                        position: absolute;
+                        top: -10px;
+                        left: -10px;
+                        right: -10px;
+                        bottom: -10px;
+                        background-size: cover;
+                        background-position: center;
+                        filter: blur(13px);
+                        overflow: hidden;
+                        z-index: -1;
+                    }
+                    .heading-20px {
+                        font-size: 20px;
+                        padding: 5px 5px;
+                        background: none;
+                        width: 150%;
+                        position: relative;
+                        left: -25%;
+                    }
+                    .heading-15px {
+                        font-size: 15px;
+                        padding: 2px 5px;
+                        background: none;
+                    }
+                    .image-area {
+                        border: none;
+                        padding: 0;
+                    }
+                    .image-grid {
+                        margin-bottom: 2px;
+                    }
+                    .image-grid.single {
+                        display: block;
+                    }
+                    .image-grid.two {
+                        display: flex;
+                        gap: 2px;
+                        padding: 5px;
+                    }
+                    .image-grid.multiple {
+                        column-count: 2;
+                        column-gap: 2px;
+                        column-width: calc((100% - 2px) / 2);
+                    }
+                    .image-container {
+                        width: 100%;
+                        margin-bottom: 2px;
+                    }
+                    .image-grid.two .image-container {
+                        flex: 1;
+                    }
+                    .inserted-image {
+                        width: 100%;
+                        height: auto;
+                        display: block;
+                        border-radius: 5px;
+                    }
+                    .divider-line {
+                        width: calc(100% - 10px);
+                        height: 1px;
+                        background-color: #ccc;
+                        margin: 0 auto;
+                    }
+                    .spacer {
+                        height: 10px;
+                        background-color: white;
+                    }
+                </style>
+            `;
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                    <title>WeChat Article</title>
+                    ${styles}
+                </head>
+                <body>
+                    <div class="content-container">
+                        ${clones.join('\n')}
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const file = new File([blob], `article-${Date.now()}.html`, { type: 'text/html' });
+
+            if (navigator.share) {
+                navigator.share({
+                    files: [file],
+                    title: 'WeChat Article',
+                    text: 'Share this article to WeChat or other apps'
+                }).catch(err => {
+                    console.error('Share failed:', err);
+                    fallbackDownload(file);
+                });
+            } else {
+                fallbackDownload(file);
+            }
+        }
+
+        function fallbackDownload(file) {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function createModuleContainer(contentElement, buttonId) {
+            const moduleContainer = document.createElement('div');
+            moduleContainer.className = 'module-container module-unit';
+            
+            const newButtonId = 'buttons-' + Date.now();
+            const newButtonContainer = document.createElement('div');
+            newButtonContainer.className = 'add-buttons';
+            newButtonContainer.id = newButtonId;
+            
+            const buttons = [
+                { text: 'T', onclick: () => addTextArea(newButtonId) },
+                { text: '🖼️', onclick: () => addImageArea(newButtonId) },
+                { text: '标30', onclick: () => addHeading(newButtonId, '30px') },
+                { text: '标20', onclick: () => addHeading(newButtonId, '20px') },
+                { text: '标15', onclick: () => addHeading(newButtonId, '15px') },
+                { text: '添加线', onclick: () => addDividerLine(newButtonId) },
+                { text: '间隔', onclick: () => addSpacer(newButtonId) }
+            ];
+            
+            buttons.forEach(btn => {
+                const button = document.createElement('button');
+                button.className = 'add-button';
+                button.textContent = btn.text;
+                button.onclick = btn.onclick;
+                newButtonContainer.appendChild(button);
+            });
+            
+            moduleContainer.appendChild(contentElement);
+            moduleContainer.appendChild(newButtonContainer);
+            return { moduleContainer, newButtonId };
+        }
+
+        function addTextArea(buttonId) {
+            const buttonContainer = document.getElementById(buttonId);
+            const containerUnit = buttonContainer.closest('.container-unit');
+            const moduleContainer = buttonContainer.closest('.module-container');
+            
+            const container = document.createElement('div');
+            container.className = 'text-area-container';
+            
+            const textArea = document.createElement('textarea');
+            textArea.className = 'text-area';
+            textArea.placeholder = '在此输入文本';
+            textArea.oninput = () => {
+                if (document.body.classList.contains('preview-mode')) {
+                    textArea.style.height = 'auto';
+                    textArea.style.height = `${textArea.scrollHeight}px`;
+                }
+            };
+            
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'text-buttons';
+            const selectButton = document.createElement('button');
+            selectButton.className = 'text-button';
+            selectButton.textContent = '全选';
+            selectButton.onclick = () => {
+                textArea.select();
+            };
+            const pasteButton = document.createElement('button');
+            pasteButton.className = 'text-button';
+            pasteButton.textContent = '粘贴';
+            pasteButton.onclick = async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    textArea.value = text;
+                    if (document.body.classList.contains('preview-mode')) {
+                        textArea.style.height = 'auto';
+                        textArea.style.height = `${textArea.scrollHeight}px`;
+                    }
+                } catch (err) {
+                    console.error('Failed to paste:', err);
+                }
+            };
+            const clearButton = document.createElement('button');
+            clearButton.className = 'clear-button';
+            clearButton.textContent = '清空';
+            clearButton.onclick = () => {
+                textArea.value = '';
+                if (document.body.classList.contains('preview-mode')) {
+                    textArea.style.height = 'auto';
+                    textArea.style.height = `${textArea.scrollHeight}px`;
+                }
+            };
+            const deleteModuleButton = document.createElement('button');
+            deleteModuleButton.className = 'delete-module-button';
+            deleteModuleButton.textContent = '删除';
+            deleteModuleButton.onclick = () => {
+                container.parentNode.remove();
+            };
+            buttonDiv.appendChild(selectButton);
+            buttonDiv.appendChild(pasteButton);
+            buttonDiv.appendChild(clearButton);
+            buttonDiv.appendChild(deleteModuleButton);
+            
+            container.appendChild(textArea);
+            container.appendChild(buttonDiv);
+            
+            const { moduleContainer: newModuleContainer, newButtonId } = createModuleContainer(container, buttonId);
+            
+            containerUnit.insertBefore(newModuleContainer, moduleContainer.nextSibling);
+        }
+
+        function addHeading(buttonId, size) {
+            const buttonContainer = document.getElementById(buttonId);
+            const containerUnit = buttonContainer.closest('.container-unit');
+            const moduleContainer = buttonContainer.closest('.module-container');
+            
+            const container = document.createElement('div');
+            container.className = 'heading-container';
+            
+            const heading = document.createElement('div');
+            heading.className = `heading-${size}`;
+            heading.contentEditable = true;
+            heading.textContent = '输入标题';
+            
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'text-buttons';
+            const selectButton = document.createElement('button');
+            selectButton.className = 'text-button';
+            selectButton.textContent = '全选';
+            selectButton.onclick = () => {
+                const range = document.createRange();
+                range.selectNodeContents(heading);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            };
+            const pasteButton = document.createElement('button');
+            pasteButton.className = 'text-button';
+            pasteButton.textContent = '粘贴';
+            pasteButton.onclick = async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    heading.textContent = text;
+                } catch (err) {
+                    console.error('Failed to paste:', err);
+                }
+            };
+            const clearButton = document.createElement('button');
+            clearButton.className = 'clear-button';
+            clearButton.textContent = '清空';
+            clearButton.onclick = () => {
+                heading.textContent = '';
+            };
+            const deleteModuleButton = document.createElement('button');
+            deleteModuleButton.className = 'delete-module-button';
+            deleteModuleButton.textContent = '删除';
+            deleteModuleButton.onclick = () => {
+                container.parentNode.remove();
+            };
+            
+            if (size === '30px') {
+                const backgroundButton = document.createElement('button');
+                backgroundButton.className = 'background-button';
+                backgroundButton.textContent = '选择背景图片';
+                
+                const fileInputId = 'background-upload-' + Date.now();
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.className = 'hidden';
+                fileInput.id = fileInputId;
+                fileInput.onchange = (e) => setHeadingBackground(e.target, heading);
+                
+                backgroundButton.onclick = () => fileInput.click();
+                
+                buttonDiv.appendChild(backgroundButton);
+                buttonDiv.appendChild(fileInput);
+            }
+            
+            buttonDiv.appendChild(selectButton);
+            buttonDiv.appendChild(pasteButton);
+            buttonDiv.appendChild(clearButton);
+            buttonDiv.appendChild(deleteModuleButton);
+            
+            container.appendChild(heading);
+            container.appendChild(buttonDiv);
+            
+            const { moduleContainer: newModuleContainer, newButtonId } = createModuleContainer(container, buttonId);
+            
+            containerUnit.insertBefore(newModuleContainer, moduleContainer.nextSibling);
+        }
+
+        function setHeadingBackground(input, heading) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    heading.style.backgroundImage = `url(${e.target.result})`;
+                    if (isHeadingBlurOn) {
+                        const blurDiv = heading.querySelector('.heading-30px-blur');
+                        if (blurDiv) {
+                            blurDiv.style.backgroundImage = `url(${e.target.result})`;
+                        } else {
+                            const newBlurDiv = document.createElement('div');
+                            newBlurDiv.className = 'heading-30px-blur';
+                            newBlurDiv.style.backgroundImage = `url(${e.target.result})`;
+                            heading.prepend(newBlurDiv);
+                        }
+                        heading.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function selectHeadingText(button) {
+            const heading = button.closest('.heading-container').querySelector('[contenteditable]');
+            const range = document.createRange();
+            range.selectNodeContents(heading);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+        function pasteHeadingText(button) {
+            const heading = button.closest('.heading-container').querySelector('[contenteditable]');
+            navigator.clipboard.readText().then(text => {
+                heading.textContent = text;
+            }).catch(err => {
+                console.error('Failed to paste:', err);
+            });
+        }
+
+        function clearHeadingText(button) {
+            const heading = button.closest('.heading-container').querySelector('[contenteditable]');
+            heading.textContent = '';
+        }
+
+        function addImageArea(buttonId) {
+            const buttonContainer = document.getElementById(buttonId);
+            const containerUnit = buttonContainer.closest('.container-unit');
+            const moduleContainer = buttonContainer.closest('.module-container');
+            
+            const imageArea = document.createElement('div');
+            imageArea.className = 'image-area';
+            
+            const imageGrid = document.createElement('div');
+            imageGrid.className = 'image-grid single';
+            imageArea.appendChild(imageGrid);
+            
+            const addButton = document.createElement('button');
+            addButton.className = 'add-image-button';
+            addButton.textContent = '+';
+            
+            const fileInputId = 'image-upload-' + Date.now();
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.className = 'hidden';
+            fileInput.id = fileInputId;
+            fileInput.onchange = (e) => insertImage(e.target, imageGrid);
+            
+            addButton.onclick = () => fileInput.click();
+            
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'image-area-buttons';
+            const deleteModuleButton = document.createElement('button');
+            deleteModuleButton.className = 'delete-module-button';
+            deleteModuleButton.textContent = '删除';
+            deleteModuleButton.onclick = () => {
+                imageArea.parentNode.remove();
+            };
+            buttonDiv.appendChild(deleteModuleButton);
+            
+            imageArea.appendChild(addButton);
+            imageArea.appendChild(fileInput);
+            imageArea.appendChild(buttonDiv);
+            
+            const { moduleContainer: newModuleContainer, newButtonId } = createModuleContainer(imageArea, buttonId);
+            
+            containerUnit.insertBefore(newModuleContainer, moduleContainer.nextSibling);
+        }
+
+        function insertImage(input, imageGrid) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageContainer = document.createElement('div');
+                    imageContainer.className = 'image-container';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'inserted-image';
+                    
+                    const deleteImageButton = document.createElement('button');
+                    deleteImageButton.className = 'delete-image-button';
+                    deleteImageButton.textContent = '删除图片';
+                    deleteImageButton.onclick = () => {
+                        imageContainer.remove();
+                        const imageCount = imageGrid.querySelectorAll('img').length - 1;
+                        imageGrid.className = 'image-grid ' + (imageCount === 1 ? 'single' : imageCount === 2 ? 'two' : 'multiple');
+                    };
+                    
+                    imageContainer.appendChild(img);
+                    imageContainer.appendChild(deleteImageButton);
+                    imageGrid.appendChild(imageContainer);
+                    
+                    const imageCount = imageGrid.querySelectorAll('img').length;
+                    imageGrid.className = 'image-grid ' + (imageCount === 1 ? 'single' : imageCount === 2 ? 'two' : 'multiple');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function addDividerLine(buttonId) {
+            const buttonContainer = document.getElementById(buttonId);
+            const containerUnit = buttonContainer.closest('.container-unit');
+            const moduleContainer = buttonContainer.closest('.module-container');
+            
+            const container = document.createElement('div');
+            container.className = 'line-container';
+            
+            const line = document.createElement('div');
+            line.className = 'divider-line';
+            
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'text-buttons';
+            const deleteModuleButton = document.createElement('button');
+            deleteModuleButton.className = 'delete-module-button';
+            deleteModuleButton.textContent = '删除';
+            deleteModuleButton.onclick = () => {
+                container.parentNode.remove();
+            };
+            buttonDiv.appendChild(deleteModuleButton);
+            
+            container.appendChild(line);
+            container.appendChild(buttonDiv);
+            
+            const { moduleContainer: newModuleContainer, newButtonId } = createModuleContainer(container, buttonId);
+            
+            containerUnit.insertBefore(newModuleContainer, moduleContainer.nextSibling);
+        }
+
+        function addSpacer(buttonId) {
+            const buttonContainer = document.getElementById(buttonId);
+            const containerUnit = buttonContainer.closest('.container-unit');
+            const moduleContainer = buttonContainer.closest('.module-container');
+            
+            const container = document.createElement('div');
+            container.className = 'spacer-container';
+            
+            const spacer = document.createElement('div');
+            spacer.className = 'spacer';
+            
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'text-buttons';
+            const deleteModuleButton = document.createElement('button');
+            deleteModuleButton.className = 'delete-module-button';
+            deleteModuleButton.textContent = '删除';
+            deleteModuleButton.onclick = () => {
+                container.parentNode.remove();
+            };
+            buttonDiv.appendChild(deleteModuleButton);
+            
+            container.appendChild(spacer);
+            container.appendChild(buttonDiv);
+            
+            const { moduleContainer: newModuleContainer, newButtonId } = createModuleContainer(container, buttonId);
+            
+            containerUnit.insertBefore(newModuleContainer, moduleContainer.nextSibling);
+        }
+    </script>
+</body>
+</html>
