@@ -45,17 +45,23 @@ jobs:
       # 接受 Android SDK 许可证
       - name: Accept Android SDK licenses
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           sleep 5
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           ls -l $ANDROID_HOME/licenses || echo "No licenses found"
 
       # 安装 Android SDK Build-Tools 和 Platform
       - name: Install Android SDK Build-Tools and Platform
         run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platforms;android-30" "ndk;23.1.7779620"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;30.0.3" "platforms;android-30" "ndk;23.1.7779620"
           ls -l $ANDROID_HOME/build-tools/
           ls -l $ANDROID_HOME/build-tools/30.0.3/
+
+      # 清理其他 Build-Tools 版本
+      - name: Clean other Build-Tools versions
+        run: |
+          find $ANDROID_HOME/build-tools/ -maxdepth 1 -type d -not -name "30.0.3" -not -name "build-tools" -exec rm -rf {} +
+          ls -l $ANDROID_HOME/build-tools/
 
       # 调试 SDK 和 Build-Tools
       - name: Debug SDK and Build-Tools
@@ -67,6 +73,7 @@ jobs:
           ls -l $ANDROID_HOME/build-tools/30.0.3 || echo "Build-Tools 30.0.3 missing"
           $ANDROID_HOME/build-tools/30.0.3/aidl --version || echo "AIDL not found"
           ls -l $ANDROID_HOME/licenses || echo "Licenses directory missing"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list
 
       # 安装 Buildozer 系统依赖
       - name: Install system dependencies
@@ -79,18 +86,19 @@ jobs:
       # 安装 Python 依赖
       - name: Install Python dependencies
         run: |
-          pip install --user buildozer kivy cython==0.29.36
+          pip install --user buildozer==1.5.0 kivy cython==0.29.36
 
       # 清理 Buildozer 缓存
       - name: Clean Buildozer cache
         run: |
+          rm -rf /home/runner/.buildozer
           buildozer android clean || true
         working-directory: .
 
       # 构建 APK
       - name: Build APK
         run: |
-          buildozer android debug
+          buildozer -v android debug
         working-directory: .
         env:
           ANDROID_SDK_ROOT: $HOME/android-sdk
