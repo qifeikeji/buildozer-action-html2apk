@@ -15,3 +15,5 @@ android.build_tools = 30.0.3
 android.accept_sdk_license = True
 android.ndk = 23.1.7779620
 android.sdk = 30
+android.skip_update = False
+log_level = 2
