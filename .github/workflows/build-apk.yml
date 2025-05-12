@@ -48,6 +48,7 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           sleep 5
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;36.0.0" --licenses || true
           ls -l $ANDROID_HOME/licenses || echo "No licenses found"
           cat $ANDROID_HOME/licenses/* || echo "No license files to display"
 
@@ -55,8 +56,9 @@ jobs:
       - name: Install Android SDK Build-Tools and Platform
         run: |
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "build-tools;36.0.0" "platforms;android-33" "ndk;25.2.9519653"
-          ls -l $ANDROID_HOME/build-tools/
-          ls -l $ANDROID_HOME/build-tools/36.0.0/
+          ls -l $ANDROID_HOME/build-tools/ || echo "Build-Tools directory missing"
+          ls -l $ANDROID_HOME/build-tools/36.0.0/ || echo "Build-Tools 36.0.0 missing"
+          $ANDROID_HOME/build-tools/36.0.0/aidl --version || echo "AIDL not found"
 
       # 清理其他 Build-Tools 版本
       - name: Clean other Build-Tools versions
@@ -69,12 +71,14 @@ jobs:
         run: |
           echo "ANDROID_HOME: $ANDROID_HOME"
           echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
+          echo "ANDROID_NDK_HOME: $ANDROID_NDK_HOME"
           ls -l $ANDROID_HOME
           ls -l $ANDROID_HOME/build-tools || echo "Build-Tools directory missing"
           ls -l $ANDROID_HOME/build-tools/36.0.0 || echo "Build-Tools 36.0.0 missing"
           $ANDROID_HOME/build-tools/36.0.0/aidl --version || echo "AIDL not found"
           ls -l $ANDROID_HOME/licenses || echo "Licenses directory missing"
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list --include_obsolete
+          cat .buildozer/android/platform/buildozer.spec || echo "Buildozer spec file missing"
 
       # 安装 Buildozer 系统依赖
       - name: Install system dependencies
@@ -99,10 +103,13 @@ jobs:
       # 构建 APK
       - name: Build APK
         run: |
+          rm -rf /home/runner/.buildozer
+          buildozer android clean || true
           buildozer -v android debug
         working-directory: .
         env:
           ANDROID_SDK_ROOT: $HOME/android-sdk
+          ANDROID_HOME: $HOME/android-sdk
           ANDROID_NDK_HOME: $HOME/android-sdk/ndk/25.2.9519653
 
       # 上传 APK 工件
